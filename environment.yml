@@ -1,0 +1,19 @@
+name: frommeantoextreme
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+dependencies:
+  - python==3.10
+  - pytorch>=2.0
+  - torchvision
+  - pytorch-cuda=11.8
+  - conda-forge::seaborn
+  - conda-forge::ipykernel
+  - conda-forge::opacus
+  - conda-forge::scikit-image
+  - pip
+  - pip: 
+    - tqdm
+    - lpips
+    - num2tex
