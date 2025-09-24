@@ -172,4 +172,6 @@ cython_debug/
 *.pdf
 *.svg
 *.png
+*.mp4
 data/*
+.vscode/
