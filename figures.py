@@ -49,7 +49,7 @@ num2tex_configure(exp_format="cdot")
 sn.set_theme(
     context="notebook",
     style="white",
-    font="Times New Roman",
+    font="Arial",
     palette="viridis",
 )
 sn.despine()
@@ -145,81 +145,13 @@ def performOptimalRecon(
 
 
 # %%
-transform = torchvision.transforms.Compose(
-    [
-        torchvision.transforms.Resize(224),
-        torchvision.transforms.CenterCrop(224),
-        torchvision.transforms.ToTensor(),
-    ]
-)
-# dataset = torchvision.datasets.ImageNet(
-#     root="/media/alex/NVME/ILSVRC2012/",
-#     transform=transform
-# )
-
-possum = torchvision.datasets.ImageFolder(root="./data/possum", transform=transform)
-attempts = 0
-max_attempts = 1000
-while attempts < max_attempts:
-    try:
-        celeba = torchvision.datasets.CelebA(
-            root="./data/", download=True, transform=transform
-        )
-        break
-    except:
-        attempts += 1
-
-# %%
-sigma = 5e-4
-largeM = 1000
-
-# imgs = [dataset[i][0] for i in [1, 544263, 586966, 539063]]
-celeba_idcs = [5, 6]
-possum_idcs = [0, 2]
-imgs = [celeba[i][0] for i in celeba_idcs]
-imgs += [possum[i][0] for i in possum_idcs]
-datanorms = [torch.linalg.norm(img.flatten(), 2) for img in imgs]
-Cs = [np.sqrt(largeM) * datanorm for datanorm in datanorms]
-C = 5000
-print(C)
-print([(C / dn) ** 2 for dn in datanorms])
-
-badrecons, goodrecons = [], []
-for img in imgs:
-    badrecons.append(performOptimalRecon(img, sigma, C, M=1))
-    goodrecons.append(performOptimalRecon(img, sigma, C, M=largeM))
-fig, axs = plt.subplots(1, 3, figsize=(3.875, 2.5), layout="constrained")
-for ax in axs:
-    ax.set_xticks([])
-    ax.set_xticklabels([])
-    ax.set_yticks([])
-    ax.set_yticklabels([])
-    ax.grid(False)
-    ax.set_frame_on(True)
-    for spine in ax.spines.values():
-        spine.set_edgecolor("black")
-        spine.set_linewidth(2)
-convert_img_list_to_grid = lambda imgs: torch_to_plt(
-    torchvision.utils.make_grid(torch.stack(imgs), nrow=2)
-).squeeze()
-axs[0].imshow(convert_img_list_to_grid(imgs))
-axs[1].imshow(convert_img_list_to_grid(badrecons))
-axs[2].imshow(convert_img_list_to_grid(goodrecons))
-axs[0].set_title("Original", fontsize=10)
-axs[1].set_title("$M<\\left(\\frac{C}{\Vert X\Vert_2}\\right)^2$", fontsize=10)
-axs[2].set_title("$M\\geq\\left(\\frac{C}{\Vert X\Vert_2}\\right)^2$", fontsize=10)
-
-fig.savefig("figure2.pdf", bbox_inches="tight", dpi=600)
-# %%
-
-# %%
 sigmas = np.logspace(-2, 2, 1000)
-risks_sgm = rero_bound_without_subsampling(1.0 / 10.0, sigmas, 1.0)
-risks_glrt = rero_bound_glrt_without_subsampling(1.0 / 10.0, 1.0, 1.0, sigmas)
-risks_ours0 = mse_cdf(0, 1.0, sigmas, 1.0)
-risks_ours1 = mse_cdf(0.01, 1.0, sigmas, 1.0)
-risks_ours2 = mse_cdf(0.1, 1.0, sigmas, 1.0)
-risks_ours3 = mse_cdf(1.0, 1.0, sigmas, 1.0)
+# risks_sgm = rero_bound_without_subsampling(1.0 / 13.0, sigmas, 1.0)
+# risks_glrt = rero_bound_glrt_without_subsampling(1.0 / 13.0, 1.0, 1.0, sigmas)
+# risks_ours0 = mse_cdf(0, 1.0, sigmas, 1.0)
+# risks_ours1 = mse_cdf(0.01, 1.0, sigmas, 1.0)
+# risks_ours2 = mse_cdf(0.1, 1.0, sigmas, 1.0)
+# risks_ours3 = mse_cdf(1.0, 1.0, sigmas, 1.0)
 
 # %%
 colors = [
@@ -232,41 +164,17 @@ colors = [
     "#0000ff",
 ]
 basic_alpha = 0.6
-# %%
-gamma = 0.1
 
-sigma_hayes = inverse_rero_bound_without_subsampling(gamma, 1.0 / 11.0, 1.0)
-sigma_kaissis = optimize.bisect(
-    lambda x: rero_bound_glrt_without_subsampling(1.0 / 11.0, 1, 1, x) - gamma,
-    0.1,
-    20.0,
-)
-
-
-etas = np.logspace(-5, 0, 100)
-sigmas = get_noise_multiplier(gamma, etas, 1.0, 1.0)
 # %%
-fig = plt.figure(figsize=(3.875, 2.5), layout="constrained")
-plt.plot(etas, sigmas, label="Ours", color=colors[6], alpha=basic_alpha)
-plt.scatter(0, sigma_hayes, label="Hayes et al.", marker="x", color=colors[1])
-plt.scatter(0, sigma_kaissis, label="Kaissis et al.", marker="x", color=colors[3])
-# plt.xscale("log")
-plt.legend(fontsize=8)
-plt.xlabel("$\eta$", fontsize=10)
-plt.ylabel("$\sigma$", rotation=0, fontsize=10, labelpad=10)
-plt.xticks(fontsize=10)
-plt.yticks(fontsize=10)
-fig.savefig("figure1.pdf", bbox_inches="tight", pad_inches=0, transparent=True)
-# %%
-fig = plt.figure(figsize=(3.875, 2.5), layout="constrained")
+fig = plt.figure(figsize=(0.5 * 5.5, 2.0), layout="constrained")
 ax = fig.add_subplot(111, projection="3d")
 
 
 eta_max = 0.5
 sigmas = np.logspace(-1, 1, 100)
 etas = np.linspace(0, eta_max, 100)
-risks_sgm = rero_bound_without_subsampling(1.0 / 10.0, sigmas, 1.0)
-risks_glrt = rero_bound_glrt_without_subsampling(1.0 / 10.0, 1.0, 1.0, sigmas)
+risks_sgm = rero_bound_without_subsampling(1.0 / 13.0, sigmas, 1.0)
+risks_glrt = rero_bound_glrt_without_subsampling(1.0 / 13.0, 1.0, 1.0, sigmas)
 
 grid_sigma, grid_eta = np.meshgrid(sigmas, etas)
 
@@ -326,6 +234,36 @@ ax.plot_surface(
     # cmap=cm.inferno,
     linewidth=0,
 )
+# ax.plot_surface(
+#     np.log10(grid_sigma),
+#     grid_eta,
+#     np.ones_like(risks_ours) * 0.1,
+#     color="lightgray",
+#     alpha=0.15,
+#     rstride=5,
+#     cstride=5,
+#     linewidth=0.8,
+#     edgecolor="#4C72B0",  # thin colored border reinforces the panel-link
+# )
+frame_color = colors[5]
+frame_lw = 1.5
+sigma_min, sigma_max = np.log10(grid_sigma[0, 0]), np.log10(grid_sigma[-1, -1])
+eta_min = grid_eta.min()
+gamma_level = 0.1
+corners_s = np.array([sigma_min, sigma_max, sigma_max, sigma_min, sigma_min])
+corners_e = np.array([eta_min, eta_min, eta_max, eta_max, eta_min])
+corners_g = np.ones_like(corners_s) * gamma_level
+
+ax.plot(
+    corners_s,
+    corners_e,
+    corners_g,
+    color=frame_color,
+    linewidth=frame_lw,
+    zorder=5,
+    alpha=0.5,
+)
+
 # ax.plot_wireframe(
 #     np.log10(grid_sigma),
 #     grid_eta,
@@ -341,9 +279,9 @@ ax.xaxis.set_rotate_label(False)
 ax.yaxis.set_rotate_label(False)
 ax.zaxis.set_rotate_label(False)
 
-ax.set_xlabel("$\sigma$")
-ax.set_ylabel("$\eta$")
-ax.set_zlabel("$\gamma$", rotation=0)
+ax.set_xlabel("$\sigma$", fontsize=8)
+ax.set_ylabel("$\eta$", fontsize=8)
+ax.set_zlabel("$\gamma$", rotation=0, fontsize=8)
 ax.set_ylim(etas[0], etas[-1])
 ax.set_zlim(0, 1)
 ax.zaxis.labelpad = -4
@@ -358,12 +296,15 @@ ax.xaxis.set_major_locator(mticker.MaxNLocator(integer=True, nbins=3))
 elev, azim, roll = 15, 45, 0
 ax.view_init(elev, azim, roll)
 ax.set_proj_type("ortho")
+ax.tick_params(axis="x", labelsize=8)
+ax.tick_params(axis="y", labelsize=8)
+ax.tick_params(axis="z", labelsize=8)
 
-fig.legend()
-fig.savefig(f"figure3.pdf", bbox_inches="tight")
+
+fig.legend(fontsize=8)
+fig.savefig(f"figure2a.pdf")
+
 # %%
-
-
 def animate(angle, angle_multiplier=1, start_angle=45):
     # Normalize the angle to the range [-180, 180] for display
     angle = angle * angle_multiplier + start_angle
@@ -386,8 +327,123 @@ class ProgressBar(tqdm):
 
 
 with ProgressBar(desc="Saving", unit="frames", unit_scale=True) as t:
-    anim.save("figure3_animated.mp4", fps=40, progress_callback=t.update_to)
+    anim.save("figure2a_animated.mp4", fps=40, progress_callback=t.update_to)
 
+# %%
+gamma = 0.1
+
+sigma_hayes = inverse_rero_bound_without_subsampling(gamma, 1.0 / 13, 1.0)
+sigma_kaissis = optimize.bisect(
+    lambda x: rero_bound_glrt_without_subsampling(1.0 / 13, 1, 1, x) - gamma,
+    0.1,
+    20.0,
+)
+risk_corridor_hayes = optimize.bisect(
+    lambda x: get_noise_multiplier(gamma, x, 1.0, 1.0) - sigma_hayes, 0.05, 0.8
+)
+risk_corridor_kaissis = optimize.bisect(
+    lambda x: get_noise_multiplier(gamma, x, 1.0, 1.0) - sigma_kaissis, 0.05, 0.8
+)
+
+
+etas = np.logspace(-5, 0, 100)
+sigmas = get_noise_multiplier(gamma, etas, 1.0, 1.0)
+# %%
+fig = plt.figure(figsize=(0.5 * 5.5, 2), layout="constrained")
+plt.plot(etas, sigmas, label="Ours", color=colors[6], alpha=basic_alpha)
+plt.scatter(0, sigma_hayes, label="Hayes et al.", marker="x", color=colors[1])
+plt.scatter(0, sigma_kaissis, label="Kaissis et al.", marker="x", color=colors[3])
+plt.plot(
+    [0, risk_corridor_hayes],
+    [sigma_hayes, sigma_hayes],
+    color="lightslategray",
+    linestyle="--",
+)
+plt.plot(
+    [0, risk_corridor_kaissis],
+    [sigma_kaissis, sigma_kaissis],
+    color="lightslategray",
+    linestyle="--",
+    label="Risk corridor",
+)
+# plt.xscale("log")
+plt.legend(fontsize=8)
+plt.xlabel("$\eta$", fontsize=8)
+plt.ylabel("$\sigma$", rotation=0, fontsize=8, labelpad=10)
+plt.xticks(fontsize=8)
+plt.yticks(fontsize=8)
+ax2d = plt.gca()
+for spine in ax2d.spines.values():
+    spine.set_edgecolor(colors[5])
+    spine.set_linewidth(1.5)
+fig.savefig("figure2b.pdf", pad_inches=0, transparent=True)
+
+# %%
+transform = torchvision.transforms.Compose(
+    [
+        torchvision.transforms.Resize(224),
+        torchvision.transforms.CenterCrop(224),
+        torchvision.transforms.ToTensor(),
+    ]
+)
+# dataset = torchvision.datasets.ImageNet(
+#     root="/media/alex/NVME/ILSVRC2012/",
+#     transform=transform
+# )
+
+possum = torchvision.datasets.ImageFolder(root="./data/possum", transform=transform)
+attempts = 0
+max_attempts = 1000
+while attempts < max_attempts:
+    try:
+        celeba = torchvision.datasets.CelebA(
+            root="./data/", download=True, transform=transform
+        )
+        break
+    except:
+        attempts += 1
+
+# %%
+sigma = 5e-4
+largeM = 1000
+
+# imgs = [dataset[i][0] for i in [1, 544263, 586966, 539063]]
+celeba_idcs = [5, 6]
+possum_idcs = [0, 2]
+imgs = [celeba[i][0] for i in celeba_idcs]
+imgs += [possum[i][0] for i in possum_idcs]
+datanorms = [torch.linalg.norm(img.flatten(), 2) for img in imgs]
+Cs = [np.sqrt(largeM) * datanorm for datanorm in datanorms]
+C = 5000
+print(C)
+print([(C / dn) ** 2 for dn in datanorms])
+
+badrecons, goodrecons = [], []
+for img in imgs:
+    badrecons.append(performOptimalRecon(img, sigma, C, M=1))
+    goodrecons.append(performOptimalRecon(img, sigma, C, M=largeM))
+fig, axs = plt.subplots(1, 3, figsize=(5.5, 2), layout="constrained")
+for ax in axs:
+    ax.set_xticks([])
+    ax.set_xticklabels([])
+    ax.set_yticks([])
+    ax.set_yticklabels([])
+    ax.grid(False)
+    ax.set_frame_on(True)
+    for spine in ax.spines.values():
+        spine.set_edgecolor("black")
+        spine.set_linewidth(2)
+convert_img_list_to_grid = lambda imgs: torch_to_plt(
+    torchvision.utils.make_grid(torch.stack(imgs), nrow=2)
+).squeeze()
+axs[0].imshow(convert_img_list_to_grid(imgs))
+axs[1].imshow(convert_img_list_to_grid(badrecons))
+axs[2].imshow(convert_img_list_to_grid(goodrecons))
+axs[0].set_title("Original", fontsize=8)
+axs[1].set_title("$M<\\left(\\frac{C}{\Vert X\Vert_2}\\right)^2$", fontsize=8)
+axs[2].set_title("$M\\geq\\left(\\frac{C}{\Vert X\Vert_2}\\right)^2$", fontsize=8)
+
+fig.savefig("figure3.pdf")
 
 # %%
 def find_value_ranges(sigmas, min_norm, N_dimensions, coverage=0.95):
@@ -432,8 +488,8 @@ def find_value_ranges(sigmas, min_norm, N_dimensions, coverage=0.95):
 
 
 # %%
-def make_dist_overlap_figure_clipped(
-    data_samples, noise_multipliers, num_sigmas_eval, C, M, additional_layers, axs
+def calc_recon_scores(
+    data_samples, noise_multipliers, num_sigmas_eval, C, M, additional_layers
 ):
     torch.random.manual_seed(120496)
     np.random.seed(0)
@@ -462,11 +518,6 @@ def make_dist_overlap_figure_clipped(
     psnr_etaspace = np.linspace(psnr_etas[0], psnr_etas[1], 500)
     mseX, mseY = np.meshgrid(noise_multipliers, mse_etaspace)
     psnrX, psnrY = np.meshgrid(noise_multipliers, psnr_etaspace)
-
-    # for i, C in enumerate(max_grad_norms):
-    # Expand the range of etaspace for better coverage
-    axs[0].set_ylim(*mse_etas)
-
     # Compute PDFs
     mse_pdfs = np.array(
         [
@@ -481,6 +532,55 @@ def make_dist_overlap_figure_clipped(
             for sigma in noise_multipliers
         ]
     )
+    mses_per_sigma = []
+    psnrs_per_sigma = []
+    for j, sigma in tqdm(enumerate(noise_multipliers_eval), leave=False):
+        mses, psnrs, nccs = [], [], []
+        recons = performOptimalRecon(
+            data_samples, sigma, C, M, additional_layers=additional_layers
+        )
+        for img, recon in tqdm(
+            zip(data_samples, recons), leave=False, desc="metric calc"
+        ):
+            mses.append(mse(img.numpy(), recon.numpy()))
+            psnrs.append(psnr(img.numpy(), recon.numpy(), data_range=1.0))
+            # nccs.append(ncc(img.numpy(), recon.numpy()))
+        mses_per_sigma.append(mses)
+        psnrs_per_sigma.append(psnrs)
+        # nccs = np.array(nccs)
+        # nccs = nccs[~np.isnan(nccs)]
+    return (
+        mse_etas,
+        mseX,
+        mseY,
+        psnrX,
+        psnrY,
+        mse_pdfs,
+        psnr_pdfs,
+        mses_per_sigma,
+        psnrs_per_sigma,
+        noise_multipliers_eval,
+    )
+
+
+def make_dist_overlap_figure_clipped(
+    axs,
+    mse_etas,
+    mseX,
+    mseY,
+    psnrX,
+    psnrY,
+    mse_pdfs,
+    psnr_pdfs,
+    mses_per_sigma,
+    psnrs_per_sigma,
+    noise_multipliers_eval,
+):
+
+    # for i, C in enumerate(max_grad_norms):
+    # Expand the range of etaspace for better coverage
+    axs[0].set_ylim(*mse_etas)
+
     axs[0].pcolormesh(
         np.log10(mseX),
         mseY,
@@ -501,20 +601,8 @@ def make_dist_overlap_figure_clipped(
     )
     # axs[2].plot(np.log10(noise_multipliers), ncc_bounds, color="black", linestyle="--")
     for j, sigma in tqdm(enumerate(noise_multipliers_eval), leave=False):
-        mses, psnrs, nccs = [], [], []
-        recons = performOptimalRecon(
-            data_samples, sigma, C, M, additional_layers=additional_layers
-        )
-        for img, recon in tqdm(
-            zip(data_samples, recons), leave=False, desc="metric calc"
-        ):
-            mses.append(mse(img.numpy(), recon.numpy()))
-            psnrs.append(psnr(img.numpy(), recon.numpy(), data_range=1.0))
-            # nccs.append(ncc(img.numpy(), recon.numpy()))
-        # nccs = np.array(nccs)
-        # nccs = nccs[~np.isnan(nccs)]
         axs[0].boxplot(
-            mses,
+            mses_per_sigma[j],
             positions=[np.log10(sigma)],
             widths=0.3,
             patch_artist=True,
@@ -523,7 +611,7 @@ def make_dist_overlap_figure_clipped(
             meanline=True,
         )
         axs[1].boxplot(
-            psnrs,
+            psnrs_per_sigma[j],
             positions=[np.log10(sigma)],
             widths=0.3,
             patch_artist=True,
@@ -540,10 +628,10 @@ def make_dist_overlap_figure_clipped(
         # )
     for i, a in enumerate(axs):
         if i == 0:
-            # a.set_ylabel("MSE", fontsize=10)
+            # a.set_ylabel("MSE", fontsize=8)
             a.set_yscale("log")
         if i == 1:
-            # a.set_ylabel("PSNR", fontsize=10)
+            # a.set_ylabel("PSNR", fontsize=8)
             pass
         # if i == 2:
         #     a.set_ylabel("NCC")
@@ -578,16 +666,15 @@ norm = torch.linalg.norm(datasamples, 2, axis=1, keepdims=True)
 enforced_norm = 1.01
 datasamples = (enforced_norm / norm) * datasamples
 
-fig, axs = plt.subplots(3, 2, figsize=(3.85, 5), sharex="col", sharey="col")
 
-make_dist_overlap_figure_clipped(
+recon_scores = {}
+recon_scores["optimal"] = calc_recon_scores(
     datasamples,
     noise_multipliers=np.logspace(-2, 2, 1000),
     num_sigmas_eval=3,
     C=1,
     M=1,
     additional_layers=[],
-    axs=axs[0],
 )
 linear_net = torch.nn.Sequential(
     torch.nn.Linear(
@@ -601,20 +688,20 @@ print(
     f"Params Linear: {sum(p.numel() for p in linear_net.parameters() if p.requires_grad)}"
 )
 
-make_dist_overlap_figure_clipped(
+recon_scores["linear"] = calc_recon_scores(
     datasamples,
     noise_multipliers=np.logspace(-2, 2, 1000),
     num_sigmas_eval=3,
     C=1,
     M=1,
     additional_layers=[(torch.nn.Identity(), linear_net)],
-    axs=axs[1],
 )
+
 transform_tensor = lambda x: x.reshape(1, 1, 2, 2).repeat(1, 3, 112, 112)
 resnet = torchvision.models.resnet101(weights=None)
 resnet = ModuleValidator.fix(resnet)
 print(f"Param ResNet: {sum(p.numel() for p in resnet.parameters() if p.requires_grad)}")
-make_dist_overlap_figure_clipped(
+recon_scores["resnet"] = calc_recon_scores(
     datasamples,
     noise_multipliers=np.logspace(-2, 2, 1000),
     num_sigmas_eval=3,
@@ -626,21 +713,28 @@ make_dist_overlap_figure_clipped(
             torch.nn.Sequential(resnet, torch.nn.AvgPool1d(1000)),
         )
     ],
-    axs=axs[2],
+)
+# %%
+fig, axs = plt.subplots(
+    2, 3, figsize=(5.5, 3.09), sharex="row", sharey="row", layout="constrained"
 )
 
-axs[0][0].set_title("MSE", fontsize=10)
-axs[0][1].set_title("PSNR", fontsize=10)
-axs[0][0].set_ylabel("Optimal", fontsize=10)
-axs[1][0].set_ylabel("Linear (1M params)", fontsize=10)
-axs[2][0].set_ylabel("ResNet-101", fontsize=10)
-axs[2][0].set_xlabel("$\\sigma$", fontsize=10)
-axs[2][1].set_xlabel("$\\sigma$", fontsize=10)
+
+make_dist_overlap_figure_clipped(axs[:, 0], *recon_scores["optimal"])
+make_dist_overlap_figure_clipped(axs[:, 1], *recon_scores["linear"])
+make_dist_overlap_figure_clipped(axs[:, 2], *recon_scores["resnet"])
+
+axs[0][0].set_ylabel("MSE", fontsize=8)
+axs[1][0].set_ylabel("PSNR", fontsize=8)
+axs[0][0].set_title("Optimal", fontsize=8)
+axs[0][1].set_title("Linear (1M params)", fontsize=8)
+axs[0][2].set_title("ResNet-101", fontsize=8)
+axs[1][0].set_xlabel("$\\sigma$", fontsize=8)
+axs[1][1].set_xlabel("$\\sigma$", fontsize=8)
+axs[1][2].set_xlabel("$\\sigma$", fontsize=8)
 
 
-fig.tight_layout()
 fig.savefig("figure4.pdf")
-
 # %%
 dataset = torchvision.datasets.CIFAR10(
     root="./data/",
@@ -659,17 +753,16 @@ norm = torch.linalg.norm(datasamples, 2, axis=1, keepdims=True)
 enforced_norm = 1.01
 datasamples = (enforced_norm / norm) * datasamples
 
-fig, axs = plt.subplots(3, 2, figsize=(3.85, 5), sharex="col", sharey="col")
-
-make_dist_overlap_figure_clipped(
+recon_scores = {}
+recon_scores["optimal"] = calc_recon_scores(
     datasamples,
     noise_multipliers=np.logspace(-2, 2, 1000),
     num_sigmas_eval=3,
     C=1,
     M=1,
     additional_layers=[],
-    axs=axs[0],
 )
+
 linear_net = torch.nn.Sequential(
     torch.nn.Linear(
         datasamples.shape[-1],
@@ -682,20 +775,19 @@ print(
     f"Params Linear: {sum(p.numel() for p in linear_net.parameters() if p.requires_grad)}"
 )
 
-make_dist_overlap_figure_clipped(
+recon_scores["linear"] = calc_recon_scores(
     datasamples,
     noise_multipliers=np.logspace(-2, 2, 1000),
     num_sigmas_eval=3,
     C=1,
     M=1,
     additional_layers=[(torch.nn.Identity(), linear_net)],
-    axs=axs[1],
 )
 transform_tensor = lambda x: x.reshape(1, 3, 32, 32)
 resnet = torchvision.models.resnet101(weights=None)
 resnet = ModuleValidator.fix(resnet)
 print(f"Param ResNet: {sum(p.numel() for p in resnet.parameters() if p.requires_grad)}")
-make_dist_overlap_figure_clipped(
+recon_scores["resnet"] = calc_recon_scores(
     datasamples,
     noise_multipliers=np.logspace(-2, 2, 1000),
     num_sigmas_eval=3,
@@ -707,19 +799,30 @@ make_dist_overlap_figure_clipped(
             torch.nn.Sequential(resnet, torch.nn.AvgPool1d(1000)),
         )
     ],
-    axs=axs[2],
 )
 
-axs[0][0].set_title("MSE", fontsize=10)
-axs[0][1].set_title("PSNR", fontsize=10)
-axs[0][0].set_ylabel("Optimal", fontsize=10)
-axs[1][0].set_ylabel("Linear ($\\approx$1M params)", fontsize=10)
-axs[2][0].set_ylabel("ResNet-101", fontsize=10)
-axs[2][0].set_xlabel("$\\sigma$", fontsize=10)
-axs[2][1].set_xlabel("$\\sigma$", fontsize=10)
+# %%
+fig, axs = plt.subplots(
+    2, 3, figsize=(5.5, 3.09), sharex="row", sharey="row", layout="constrained"
+)
+
+
+make_dist_overlap_figure_clipped(axs[:, 0], *recon_scores["optimal"])
+make_dist_overlap_figure_clipped(axs[:, 1], *recon_scores["linear"])
+make_dist_overlap_figure_clipped(axs[:, 2], *recon_scores["resnet"])
+
+axs[0][0].set_ylabel("MSE", fontsize=8)
+axs[1][0].set_ylabel("PSNR", fontsize=8)
+axs[0][0].set_title("Optimal", fontsize=8)
+axs[0][1].set_title("Linear (1M params)", fontsize=8)
+axs[0][2].set_title("ResNet-101", fontsize=8)
+axs[1][0].set_xlabel("$\\sigma$", fontsize=8)
+axs[1][1].set_xlabel("$\\sigma$", fontsize=8)
+axs[1][2].set_xlabel("$\\sigma$", fontsize=8)
 
 
 fig.tight_layout()
 fig.savefig("figure5.pdf")
+
 
 # %%
