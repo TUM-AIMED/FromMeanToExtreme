@@ -6,7 +6,6 @@ Accompanying code for the paper "From Mean to Extreme: Formal Differential Priva
  1. Install [conda](https://docs.conda.io/projects/conda/en/stable/user-guide/install/index.html).
  2. `conda env create -f environment.yaml`
  3. `conda activate frommeantoextreme`
- 4. Copy the Imagenet dataset (ILSVRC2012) into the data folder.
 
 ## How to reproduce figures
 [figures.py](figures.py) contains the code to reproduce all figures in the paper. 
