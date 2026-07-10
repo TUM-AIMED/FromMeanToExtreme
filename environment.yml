@@ -12,8 +12,11 @@ dependencies:
   - conda-forge::ipykernel
   - conda-forge::opacus
   - conda-forge::scikit-image
+  - conda-forge::matplotlib
+  - conda-forge::scipy
   - pip
   - pip: 
     - tqdm
     - lpips
     - num2tex
+    - medmnist

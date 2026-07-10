@@ -175,3 +175,6 @@ cython_debug/
 *.mp4
 data/*
 .vscode/
+
+# Experiment outputs (regenerable via experiments/, seed=42)
+results/
