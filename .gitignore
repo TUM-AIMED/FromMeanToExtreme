@@ -178,3 +178,6 @@ data/*
 
 # Experiment outputs (regenerable via experiments/, seed=42)
 results/
+
+# Local caches for regenerate_figure*.py scripts (large, regenerable)
+*.pkl

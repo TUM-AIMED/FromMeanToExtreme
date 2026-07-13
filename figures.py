@@ -716,7 +716,7 @@ recon_scores["resnet"] = calc_recon_scores(
 )
 # %%
 fig, axs = plt.subplots(
-    2, 3, figsize=(5.5, 3.09), sharex="row", sharey="row", layout="constrained"
+    2, 3, figsize=(5.5, 1.8), sharex="row", sharey="row", layout="constrained"
 )
 
 
@@ -803,7 +803,7 @@ recon_scores["resnet"] = calc_recon_scores(
 
 # %%
 fig, axs = plt.subplots(
-    2, 3, figsize=(5.5, 3.09), sharex="row", sharey="row", layout="constrained"
+    2, 3, figsize=(5.5, 1.75), sharex="row", sharey="row", layout="constrained"
 )
 
 
@@ -821,7 +821,6 @@ axs[1][1].set_xlabel("$\\sigma$", fontsize=8)
 axs[1][2].set_xlabel("$\\sigma$", fontsize=8)
 
 
-fig.tight_layout()
 fig.savefig("figure5.pdf")
 
 
